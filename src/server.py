@@ -41,13 +41,13 @@ def setupAngles():
                     angles[d][i][j][1] = cfg.elbowZero + acos(((cfg.upperArmLen**2 + cfg.lowerArmLen**2) - c**2)/(2 * cfg.upperArmLen * cfg.lowerArmLen))
                     angles[d][i][j][0] = cfg.shoulderZero + asin(cfg.lowerArmLen/c * sin(angles[d][i][j][1])) + atan(coordinates[d][i][j][1]/coordinates[d][i][j][0]) - pi/2
                 except ValueError as e:
-                    print "Error:", e
+                    print("Error:", e)
 
                 # Convert to degrees
                 #angles[d][i][j][0] *= 180/pi
                 #angles[d][i][j][1] *= 180/pi
 
-                print "Values for", d, i, j, ":", coordinates[d][i][j], c, angles[d][i][j]
+                print("Values for", d, i, j, ":", coordinates[d][i][j], c, angles[d][i][j])
 
 
 # Convert angles of [0.0, pi] to [0, 250] so we can send them over serial as
@@ -66,7 +66,7 @@ def draw(position, digit):
         transmit()
         time.sleep(cfg.drawSpeed)
         if cfg.debug:
-            print "Writing", digit, "at position", position, ". Servo angles:", desiredAngles, "  Sending bytes:", angle2byte(desiredAngles[0]), angle2byte(desiredAngles[1])
+            print("Writing", digit, "at position", position, ". Servo angles:", desiredAngles, "  Sending bytes:", angle2byte(desiredAngles[0]), angle2byte(desiredAngles[1]))
 
 
 # =============================================================================
@@ -83,7 +83,7 @@ def serWrite(myStr):
         for i in range(len(myStr)):
             ser.write(myStr[i])
     except:
-        print "[GS] Unable to send data. Check connection."
+        print("[GS] Unable to send data. Check connection.")
         # TODO: Comm should do something to ensure safety when it loses connection.
 
 
@@ -91,18 +91,18 @@ def initSerial():
     try:
         ser = serial.Serial(cfg.serialPort, cfg.baudRate, timeout=0)
     except serial.SerialException:
-        print "[GS] Unable to open specified serial port! Exiting..."
+        print("[GS] Unable to open specified serial port! Exiting...")
         #exit(1)
     except AttributeError:
         for i in range(4):
             try:
                 ser = serial.Serial("/dev/ttyUSB"+str(i), cfg.baudRate, timeout=0)
-                print "[GS] Opened serial port at /dev/ttyUSB%d." % i
+                print("[GS] Opened serial port at /dev/ttyUSB%d." % i)
                 break
             except serial.SerialException:
-                print "[GS] No serial at /dev/ttyUSB%d." % i
+                print("[GS] No serial at /dev/ttyUSB%d." % i)
                 if i == 3:
-                    print "[GS] No serial found. Giving up!"
+                    print("[GS] No serial found. Giving up!")
                     exit(1)
 
 
