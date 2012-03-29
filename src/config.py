@@ -2,7 +2,7 @@ from math import *
 
 # General
 serialPort = "/dev/ttyS0"
-baudRate = 76800
+baudRate = 38400
 debug = True
 
 # TX

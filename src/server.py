@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 
 import sys
@@ -19,12 +19,12 @@ coordinates = [[[[0., 0.], [0., 0.]], [[0., 0.], [0., 0.]], [[0., 0.], [0., 0.]]
                [[[0., 0.], [0., 0.]], [[0., 0.], [0., 0.]], [[0., 0.], [0., 0.]]],
                [[[0., 0.], [0., 0.]], [[0., 0.], [0., 0.]], [[0., 0.], [0., 0.]]],
                [[[0., 0.], [0., 0.]], [[0., 0.], [0., 0.]], [[0., 0.], [0., 0.]]]]
-angles      = [[[[0., 0.], [0., 0.]], [[0., 0.], [0., 0.]], [[0., 0.], [0., 0.]]],
-               [[[0., 0.], [0., 0.]], [[0., 0.], [0., 0.]], [[0., 0.], [0., 0.]]],
-               [[[0., 0.], [0., 0.]], [[0., 0.], [0., 0.]], [[0., 0.], [0., 0.]]],
-               [[[0., 0.], [0., 0.]], [[0., 0.], [0., 0.]], [[0., 0.], [0., 0.]]]]
+angles      = [[[[0., 0., 0.], [0., 0., 0.]], [[0., 0., 0.], [0., 0., 0.]], [[0., 0., 0.], [0., 0., 0.]]],
+               [[[0., 0., 0.], [0., 0., 0.]], [[0., 0., 0.], [0., 0., 0.]], [[0., 0., 0.], [0., 0., 0.]]],
+               [[[0., 0., 0.], [0., 0., 0.]], [[0., 0., 0.], [0., 0., 0.]], [[0., 0., 0.], [0., 0., 0.]]],
+               [[[0., 0., 0.], [0., 0., 0.]], [[0., 0., 0.], [0., 0., 0.]], [[0., 0., 0.], [0., 0., 0.]]]]
 
-desiredAngles = [0, 0]   # Desired shoulder and elbow angles, as bytes.
+desiredAngles = [0, 0, 0]   # Desired shoulder, elbow, and wrist angles, as bytes.
 
 
 def setupAngles():
@@ -52,8 +52,9 @@ def setupAngles():
 
 # Convert angles of [0.0, pi] to [0, 250] so we can send them over serial as
 # bytes.
-def angle2byte (angle):
-    return int(angle * 250./pi)
+def angle2byte(angle):
+    twoBytes = int(angle * 0x3fff/pi)
+    return chr(twoBytes & 0x7f) + chr(twoBytes >> 7)
 
 
 # =============================================================================
@@ -62,32 +63,39 @@ def angle2byte (angle):
 def draw(position, digit):
     global desiredAngles
     for point in cfg.numbers[digit]:
+        angles[position][point[0]][point[1]][2] = 0
         desiredAngles = angles[position][point[0]][point[1]]
         transmit()
         time.sleep(cfg.drawSpeed)
         if cfg.debug:
-            print("Writing", digit, "at position", position, ". Servo angles:", desiredAngles, "  Sending bytes:", angle2byte(desiredAngles[0]), angle2byte(desiredAngles[1]))
+            print("Writing", digit, "at position", position, ". Servo angles:", desiredAngles, "  Sending bytes:", angle2byte(desiredAngles[0]), angle2byte(desiredAngles[1]), angle2byte(desiredAngles[2]))
 
 
 # =============================================================================
 # Communicate.
 # =============================================================================
 def transmit():
+    global desiredAngles
     serWrite(cfg.serHeader +
-             chr(angle2byte(desiredAngles[0])) +
-             chr(angle2byte(desiredAngles[1])))
+             angle2byte(desiredAngles[0]) +
+             angle2byte(desiredAngles[1]) +
+             angle2byte(desiredAngles[2]))
 
 # Serial write.
 def serWrite(myStr):
+    global ser
     try:
         for i in range(len(myStr)):
             ser.write(myStr[i])
+    except NameError:
+        print("asdfasdfasdf")
     except:
         print("[GS] Unable to send data. Check connection.")
         # TODO: Comm should do something to ensure safety when it loses connection.
 
 
 def initSerial():
+    global ser
     try:
         ser = serial.Serial(cfg.serialPort, cfg.baudRate, timeout=0)
     except serial.SerialException:
