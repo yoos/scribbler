@@ -91,6 +91,14 @@ def serWrite(myStr):
         # TODO: Comm should do something to ensure safety when it loses connection.
 
 
+# =============================================================================
+# Try to initialize a serial connection. If serialPort is defined, try
+# opening that. If it is not defined, loop through a range of integers
+# starting from 0 and try to connect to /dev/ttyUSBX where X is the
+# integer. In either case, process dies if serial port cannot be opened.
+#
+# TODO: This needs to be made more concise.
+# =============================================================================
 def initSerial():
     global ser
     try:
@@ -126,14 +134,6 @@ class ScribblerTX(threading.Thread):
 ###############################################################################
 
 if __name__ == "__main__":
-    # =========================================================================
-    # Try to initialize a serial connection. If serialPort is defined, try
-    # opening that. If it is not defined, loop through a range of integers
-    # starting from 0 and try to connect to /dev/ttyUSBX where X is the
-    # integer. In either case, process dies if serial port cannot be opened.
-    #
-    # TODO: This needs to be made more concise.
-    # =========================================================================
     initSerial()
 
     setupAngles()
