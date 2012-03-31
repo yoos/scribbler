@@ -1,5 +1,5 @@
-#include "OrkLib/OrkCore.h"
- 
+#include "OrkCore.h"
+
 int main(void)
 {	
 	initializeCore(); // Initializes core ORK Functionality
@@ -15,10 +15,15 @@ int main(void)
 	unsigned short USARTBuffer7;
 
 	//Servoposition Vars
-	unsigned short ShoulderPosition;
-	unsigned short ElbowPosition;
-	unsigned short EndEffectorPosition;
-
+	unsigned long ShoulderPosition;
+	unsigned long ElbowPosition;
+	unsigned long EndEffectorPosition;
+	/*
+	//Servo 32bit vars for math operation
+	unsigned long ShoulderMath;
+	unsigned long ElbowMath;
+	unsigned long EndEffectorMath;
+	*/
 	while(1)
 	{
 
@@ -40,11 +45,12 @@ int main(void)
 			ShoulderPosition=(USARTBuffer3<<7)|(USARTBuffer2);
 			ElbowPosition=(USARTBuffer5<<7)|(USARTBuffer4);
 			EndEffectorPosition=(USARTBuffer7<<7)|(USARTBuffer6);
-
-			//Mapping to 11-bit Resolution
-			ShoulderPosition = ShoulderPosition/2000+2000;
-			ElbowPosition = ElbowPosition/2000+2000;
-			EndEffectorPosition = EndEffectorPosition/2000+2000;
+			
+			
+			//Mapping 14-bit input to 11-bit Resolution
+			ShoulderPosition = (ShoulderPosition*4100) / 16384 + 1000;
+			ElbowPosition = (ElbowPosition*3700) / 16384 + 500;
+			EndEffectorPosition = (EndEffectorPosition*3700) / 16384 + 1000;
 			
 			//SetServos to Position
 			setServo(Shoulder, ShoulderPosition);
@@ -54,8 +60,5 @@ int main(void)
 		ledOff();
 	}
 	}
-
 	return 0;
 }
-	
-
