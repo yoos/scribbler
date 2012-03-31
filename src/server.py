@@ -79,7 +79,8 @@ def transmit():
     serWrite(cfg.serHeader +
              angle2byte(desiredAngles[0]) +
              angle2byte(desiredAngles[1]) +
-             angle2byte(desiredAngles[2]))
+             angle2byte(desiredAngles[2]) +
+             '\x01')
 
 # Serial write.
 def serWrite(myStr):
