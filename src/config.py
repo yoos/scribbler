@@ -7,7 +7,7 @@ debug = True
 
 # TX
 dataSendInterval = 0.025   # 25 ms interval = 40 Hz. NOTE: This frequency should be LOWER than the microcontroller's control loop frequency!
-serHeader = chr(255)
+serHeader = '\xff'
 
 # Hardware configuration
 shoulderZero = pi/2   # Zero position of shoulder servo
@@ -31,14 +31,5 @@ numbers = [[[0,0], [0,1], [2,1], [2,0], [0,0]],                        # 0
            [[1,0], [0,0], [0,1], [2,1]],                               # 7
            [[1,0], [0,0], [0,1], [1,1], [1,0], [2,0], [2,1], [1,1]],   # 8
            [[1,1], [1,0], [0,0], [0,1], [2,1], [2,0]]]                 # 9
-
-
-# RX
-newlineSerTag  = '\xde\xad\xbe\xef'
-fieldSerTag    = '\xff\xff'
-dcmSerTag      = '\xfb'
-rotationSerTag = '\xfc'
-motorSerTag    = '\xfd'
-pidSerTag      = '\xfe'
 
 
