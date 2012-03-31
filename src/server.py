@@ -35,7 +35,7 @@ def setupAngles():
                 coordinates[d][i][j][0] = cfg.origin[0] + (d+j)*cfg.segmentLen + (d+d/2)*cfg.separation
                 coordinates[d][i][j][1] = cfg.origin[1] + i*cfg.segmentLen
 
-                # Calculate servo angles (in degrees) necessary to reach the coordinate point.
+                # Calculate servo angles (in radians) necessary to reach the coordinate point.
                 c = sqrt(coordinates[d][i][j][0]**2 + coordinates[d][i][j][1]**2)
                 try:
                     angles[d][i][j][1] = cfg.elbowZero + acos(((cfg.upperArmLen**2 + cfg.lowerArmLen**2) - c**2)/(2 * cfg.upperArmLen * cfg.lowerArmLen))
@@ -43,14 +43,10 @@ def setupAngles():
                 except ValueError as e:
                     print("Error:", e)
 
-                # Convert to degrees
-                #angles[d][i][j][0] *= 180/pi
-                #angles[d][i][j][1] *= 180/pi
-
                 print("Values for", d, i, j, ":", coordinates[d][i][j], c, angles[d][i][j])
 
 
-# Convert angles of [0.0, pi] to [0, 250] so we can send them over serial as
+# Convert angles of [0.0, pi] to [0, 0x3fff] so we can send them over serial as
 # bytes.
 def angle2byte(angle):
     twoBytes = int(angle * 0x3fff/pi)
@@ -65,7 +61,7 @@ def draw(position, digit):
     for point in cfg.numbers[digit]:
         angles[position][point[0]][point[1]][2] = 0
         desiredAngles = angles[position][point[0]][point[1]]
-        transmit()
+        transmit(1)
         time.sleep(cfg.drawSpeed)
         if cfg.debug:
             print("Writing", digit, "at position", position, ". Servo angles:", desiredAngles, "  Sending bytes:", angle2byte(desiredAngles[0]), angle2byte(desiredAngles[1]), angle2byte(desiredAngles[2]))
@@ -74,13 +70,13 @@ def draw(position, digit):
 # =============================================================================
 # Communicate.
 # =============================================================================
-def transmit():
+def transmit(power):
     global desiredAngles
     serWrite(cfg.serHeader +
              angle2byte(desiredAngles[0]) +
              angle2byte(desiredAngles[1]) +
              angle2byte(desiredAngles[2]) +
-             '\x01')
+             chr(power))
 
 # Serial write.
 def serWrite(myStr):
@@ -122,7 +118,7 @@ class ScribblerTX(threading.Thread):
         self.times = 0
     def run(self):
         while self.running:
-            transmit()
+            transmit(1)
             self.times += 1
             time.sleep(cfg.dataSendInterval)
 
@@ -142,9 +138,17 @@ if __name__ == "__main__":
 
     setupAngles()
 
-    draw(0, 9)
-    draw(1, 5)
-    draw(2, 5)
+    serWrite(cfg.serHeader + '\x00'*7)
+
+    desiredAngles[0] = pi * 4/5
+    desiredAngles[1] = pi * 4/5
+    desiredAngles[2] = pi/2
+    transmit(1)
+
+    #draw(0, 9)
+    #draw(1, 5)
+    #draw(2, 5)
+
 
     tx = ScribblerTX()
     tx.start()
