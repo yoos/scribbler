@@ -19,10 +19,10 @@ coordinates = [[[[0., 0.], [0., 0.]], [[0., 0.], [0., 0.]], [[0., 0.], [0., 0.]]
                [[[0., 0.], [0., 0.]], [[0., 0.], [0., 0.]], [[0., 0.], [0., 0.]]],
                [[[0., 0.], [0., 0.]], [[0., 0.], [0., 0.]], [[0., 0.], [0., 0.]]],
                [[[0., 0.], [0., 0.]], [[0., 0.], [0., 0.]], [[0., 0.], [0., 0.]]]]
-angles      = [[[[0., 0., 0.], [0., 0., 0.]], [[0., 0., 0.], [0., 0., 0.]], [[0., 0., 0.], [0., 0., 0.]]],
-               [[[0., 0., 0.], [0., 0., 0.]], [[0., 0., 0.], [0., 0., 0.]], [[0., 0., 0.], [0., 0., 0.]]],
-               [[[0., 0., 0.], [0., 0., 0.]], [[0., 0., 0.], [0., 0., 0.]], [[0., 0., 0.], [0., 0., 0.]]],
-               [[[0., 0., 0.], [0., 0., 0.]], [[0., 0., 0.], [0., 0., 0.]], [[0., 0., 0.], [0., 0., 0.]]]]
+angles      = [[[[0., 0.], [0., 0.]], [[0., 0.], [0., 0.]], [[0., 0.], [0., 0.]]],
+               [[[0., 0.], [0., 0.]], [[0., 0.], [0., 0.]], [[0., 0.], [0., 0.]]],
+               [[[0., 0.], [0., 0.]], [[0., 0.], [0., 0.]], [[0., 0.], [0., 0.]]],
+               [[[0., 0.], [0., 0.]], [[0., 0.], [0., 0.]], [[0., 0.], [0., 0.]]]]
 
 desiredAngles = [0, 0, 0]   # Desired shoulder, elbow, and wrist angles, as bytes.
 
@@ -38,8 +38,8 @@ def setupAngles():
                 # Calculate servo angles (in radians) necessary to reach the coordinate point.
                 c = sqrt(coordinates[d][i][j][0]**2 + coordinates[d][i][j][1]**2)
                 try:
-                    angles[d][i][j][1] = cfg.elbowZero + acos(((cfg.upperArmLen**2 + cfg.lowerArmLen**2) - c**2)/(2 * cfg.upperArmLen * cfg.lowerArmLen))
-                    angles[d][i][j][0] = cfg.shoulderZero + asin(cfg.lowerArmLen/c * sin(angles[d][i][j][1])) + atan(coordinates[d][i][j][1]/coordinates[d][i][j][0]) - pi/2
+                    angles[d][i][j][1] = cfg.elbowZero - acos(((cfg.upperArmLen**2 + cfg.lowerArmLen**2) - c**2)/(2 * cfg.upperArmLen * cfg.lowerArmLen))
+                    angles[d][i][j][0] = cfg.shoulderZero - asin(cfg.lowerArmLen/c * sin(angles[d][i][j][1])) + atan(coordinates[d][i][j][1]/coordinates[d][i][j][0])
                 except ValueError as e:
                     print("Error:", e)
 
@@ -56,11 +56,26 @@ def angle2byte(angle):
 # =============================================================================
 # Drawing functions.
 # =============================================================================
+def zero():
+    global desiredAngles
+    desiredAngles[0] = cfg.shoulderZero
+    desiredAngles[2] = cfg.wristZero
+
+    desiredAngles[1] = cfg.elbowZero - 0.1
+    transmit(1)
+
+    desiredAngles[1] = cfg.elbowZero
+    transmit(1)
+
 def draw(position, digit):
     global desiredAngles
+    desiredAngles[2] = cfg.wristZero   # Start with wrist in zero position.
+    desiredAngles[:2] = angles[position][cfg.numbers[digit][0][0]][cfg.numbers[digit][0][1]]
+    transmit(1)
+    desiredAngles[2] = cfg.wristPen
+
     for point in cfg.numbers[digit]:
-        angles[position][point[0]][point[1]][2] = 0
-        desiredAngles = angles[position][point[0]][point[1]]
+        desiredAngles[:2] = angles[position][point[0]][point[1]]
         transmit(1)
         time.sleep(cfg.drawSpeed)
         if cfg.debug:
@@ -77,6 +92,7 @@ def transmit(power):
              angle2byte(desiredAngles[1]) +
              angle2byte(desiredAngles[2]) +
              chr(power))
+    time.sleep(cfg.dataSendInterval)
 
 # Serial write.
 def serWrite(myStr):
@@ -126,7 +142,6 @@ class ScribblerTX(threading.Thread):
         self.times = 0
     def run(self):
         while self.running:
-            transmit(1)
             self.times += 1
             time.sleep(cfg.dataSendInterval)
 
@@ -138,25 +153,23 @@ if __name__ == "__main__":
 
     setupAngles()
 
-    serWrite(cfg.serHeader + '\x00'*7)
+    zero()
 
-    desiredAngles[0] = pi * 4/5
-    desiredAngles[1] = pi * 4/5
-    desiredAngles[2] = pi/2
-    transmit(1)
-
-    #draw(0, 9)
+    draw(0, 1)
     #draw(1, 5)
     #draw(2, 5)
 
+    zero()
 
-    tx = ScribblerTX()
-    tx.start()
+    #transmit(0)
 
-    # Stop the while loops.
-    tx.running = False
+    #tx = ScribblerTX()
+    #tx.start()
 
-    # Wait for threads to finish jobs.
-    tx.join()
+    ## Stop the while loops.
+    #tx.running = False
+
+    ## Wait for threads to finish jobs.
+    #tx.join()
 
 

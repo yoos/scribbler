@@ -6,12 +6,17 @@ baudRate = 38400
 debug = True
 
 # TX
-dataSendInterval = 0.025   # 25 ms interval = 40 Hz. NOTE: This frequency should be LOWER than the microcontroller's control loop frequency!
+dataSendInterval = 0.1   # 25 ms interval = 40 Hz. NOTE: This frequency should be LOWER than the microcontroller's control loop frequency!
 serHeader = '\xff'
 
 # Hardware configuration
-shoulderZero = pi/2   # Zero position of shoulder servo
-elbowZero = 0       # Zero position of elbow servo
+shoulderZero = pi * 0.47   # Zero position of shoulder servo
+elbowZero = pi       # Zero position of elbow servo
+
+wristZero = pi * 0.47
+wristPen  = 0
+wristEraser = pi
+
 upperArmLen = 10.
 lowerArmLen = 10.
 
