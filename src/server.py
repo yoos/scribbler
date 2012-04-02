@@ -29,21 +29,22 @@ desiredAngles = [0, 0, 0]   # Desired shoulder, elbow, and wrist angles, as byte
 
 def setupAngles():
     for d in range(4):
-        for i in range(3):
-            for j in range(2):
+        for row in range(3):
+            for col in range(2):
                 # Calculate coordinates.
-                coordinates[d][i][j][0] = cfg.origin[0] + (d+j)*cfg.segmentLen + (d+d/2)*cfg.separation
-                coordinates[d][i][j][1] = cfg.origin[1] + i*cfg.segmentLen
+                coordinates[d][row][col][1] = cfg.origin[0] + (d+col)*cfg.segmentLen + (d+d/2)*cfg.separation
+                coordinates[d][row][col][0] = cfg.origin[1] + row*cfg.segmentLen
 
                 # Calculate servo angles (in radians) necessary to reach the coordinate point.
-                c = sqrt(coordinates[d][i][j][0]**2 + coordinates[d][i][j][1]**2)
+                c = sqrt(coordinates[d][row][col][0]**2 + coordinates[d][row][col][1]**2)
                 try:
-                    angles[d][i][j][1] = cfg.elbowZero - acos(((cfg.upperArmLen**2 + cfg.lowerArmLen**2) - c**2)/(2 * cfg.upperArmLen * cfg.lowerArmLen))
-                    angles[d][i][j][0] = cfg.shoulderZero - asin(cfg.lowerArmLen/c * sin(angles[d][i][j][1])) + atan(coordinates[d][i][j][1]/coordinates[d][i][j][0])
+                    # Calculate elbow angle, then calculate shoulder angle depending on elbow angle.
+                    angles[d][row][col][1] = cfg.elbowZero - acos(((cfg.upperArmLen**2 + cfg.lowerArmLen**2) - c**2)/(2 * cfg.upperArmLen * cfg.lowerArmLen))
+                    angles[d][row][col][0] = cfg.shoulderZero - asin(cfg.lowerArmLen/c * sin(angles[d][row][col][1])) + atan(coordinates[d][row][col][1]/coordinates[d][row][col][0])
                 except ValueError as e:
                     print("Error:", e)
 
-                print("Values for", d, i, j, ":", coordinates[d][i][j], c, angles[d][i][j])
+                print("Values for", d, row, col, ":", coordinates[d][row][col], c, angles[d][row][col])
 
 
 # Convert angles of [0.0, pi] to [0, 0x3fff] so we can send them over serial as
@@ -67,12 +68,17 @@ def zero():
     desiredAngles[1] = cfg.elbowZero
     transmit(1)
 
+    time.sleep(cfg.zeroDelay)   # Wait until pen is in cap.
+
+    transmit(0)
+
 def draw(position, digit):
     global desiredAngles
     desiredAngles[2] = cfg.wristZero   # Start with wrist in zero position.
     desiredAngles[:2] = angles[position][cfg.numbers[digit][0][0]][cfg.numbers[digit][0][1]]
     transmit(1)
     desiredAngles[2] = cfg.wristPen
+    transmit(1)
 
     for point in cfg.numbers[digit]:
         desiredAngles[:2] = angles[position][point[0]][point[1]]
@@ -92,7 +98,7 @@ def transmit(power):
              angle2byte(desiredAngles[1]) +
              angle2byte(desiredAngles[2]) +
              chr(power))
-    time.sleep(cfg.dataSendInterval)
+    time.sleep(cfg.drawDelay)
 
 # Serial write.
 def serWrite(myStr):
@@ -101,7 +107,7 @@ def serWrite(myStr):
         for i in range(len(myStr)):
             ser.write(myStr[i])
     except NameError:
-        print("asdfasdfasdf")
+        print("serWrite NameError!")
     except:
         print("[GS] Unable to send data. Check connection.")
         # TODO: Comm should do something to ensure safety when it loses connection.
@@ -143,7 +149,7 @@ class ScribblerTX(threading.Thread):
     def run(self):
         while self.running:
             self.times += 1
-            time.sleep(cfg.dataSendInterval)
+            time.sleep(cfg.drawDelay)
 
 
 ###############################################################################
@@ -155,10 +161,44 @@ if __name__ == "__main__":
 
     zero()
 
-    draw(0, 1)
+    #draw(0, 1)
     #draw(1, 5)
     #draw(2, 5)
 
+    while True:
+        coordInput = raw_input("Coordinates:")
+
+        if coordInput == 'x':
+            break
+        elif coordInput == 'z':
+            zero()
+        elif coordInput == 'w':
+            desiredAngles[2] = cfg.wristZero
+            transmit(1)
+        elif coordInput == '955':
+            draw(0, 9)
+            draw(1, 5)
+            draw(2, 5)
+        elif coordInput == 't':
+            for d in range(4):
+                for row in range(3):
+                    for col in range(2):
+                        desiredAngles[2] = cfg.wristPen
+                        desiredAngles[:2] = angles[d][row][col]
+                        transmit(1)
+                        print("Position:", d, "Servo angles:", desiredAngles, "  Sending bytes:", angle2byte(desiredAngles[0]), angle2byte(desiredAngles[1]), angle2byte(desiredAngles[2]))
+        else:
+            coordProcessed = [0., 0.]
+            for i in range(len(coordInput.split())):
+                coordProcessed[i] = float(coordInput.split()[i])
+            print coordProcessed
+
+            desiredAngles[:2] = coordProcessed
+            transmit(1)
+            desiredAngles[2] = cfg.wristPen
+            transmit(1)
+
+    desiredAngles[2] = cfg.wristZero
     zero()
 
     #transmit(0)
