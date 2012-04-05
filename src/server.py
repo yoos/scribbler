@@ -59,7 +59,7 @@ def angle2byte(angle):
 # =============================================================================
 def zero():
     global desiredAngles
-    desiredAngles[0] = pi
+    desiredAngles[0] = cfg.shoulderZero + 1.6
     desiredAngles[2] = cfg.wristZero
 
     desiredAngles[1] = cfg.elbowZero - 0.1
@@ -72,7 +72,7 @@ def zero():
 
     transmit(0)
 
-def draw(position, digit):
+def drawDigit(position, digit):
     global desiredAngles
     desiredAngles[2] = cfg.wristZero   # Start with wrist in zero position.
     desiredAngles[:2] = angles[position][cfg.numbers[digit][0][0]][cfg.numbers[digit][0][1]]
@@ -161,9 +161,9 @@ if __name__ == "__main__":
 
     zero()
 
-    #draw(0, 1)
-    #draw(1, 5)
-    #draw(2, 5)
+    #drawDigit(0, 1)
+    #drawDigit(1, 5)
+    #drawDigit(2, 5)
 
     while True:
         coordInput = raw_input("Coordinates:")
@@ -176,9 +176,9 @@ if __name__ == "__main__":
             desiredAngles[2] = cfg.wristZero
             transmit(1)
         elif coordInput == '955':
-            draw(0, 9)
-            draw(1, 5)
-            draw(2, 5)
+            drawDigit(0, 9)
+            drawDigit(1, 5)
+            drawDigit(2, 5)
         elif coordInput == 't':
             for d in range(4):
                 for row in range(3):
