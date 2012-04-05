@@ -15,6 +15,7 @@ import config as cfg
 #coordinates = [[[[0., 0.]] * 2] * 3] * 4
 #angles      = [[[[0., 0.]] * 2] * 3] * 4
 
+# Cartesian coordinates in [X, Y], points in number grid in [row, col].
 coordinates = [[[[0., 0.], [0., 0.]], [[0., 0.], [0., 0.]], [[0., 0.], [0., 0.]]],
                [[[0., 0.], [0., 0.]], [[0., 0.], [0., 0.]], [[0., 0.], [0., 0.]]],
                [[[0., 0.], [0., 0.]], [[0., 0.], [0., 0.]], [[0., 0.], [0., 0.]]],
@@ -27,7 +28,20 @@ angles      = [[[[0., 0.], [0., 0.]], [[0., 0.], [0., 0.]], [[0., 0.], [0., 0.]]
 desiredAngles = [0, 0, 0]   # Desired shoulder, elbow, and wrist angles, as bytes.
 
 
+def positionToAngles(position):
+    angles = [0., 0.]
+
+    # Calculate servo angles (in radians) necessary to reach the coordinate point.
+    c = sqrt(position[0]**2 + position[1]**2)
+
+    # Calculate elbow angle, then calculate shoulder angle depending on elbow angle.
+    angles[1] = cfg.elbowZero - acos(((cfg.upperArmLen**2 + cfg.lowerArmLen**2) - c**2)/(2 * cfg.upperArmLen * cfg.lowerArmLen))
+    angles[0] = cfg.shoulderZero - asin(cfg.lowerArmLen/c * sin(angles[1])) + atan(position[1]/position[0])
+
+    return angles
+
 def setupAngles():
+    global coordinates, angles
     for d in range(4):
         for row in range(3):
             for col in range(2):
@@ -35,16 +49,12 @@ def setupAngles():
                 coordinates[d][row][col][1] = cfg.origin[0] + (d+col)*cfg.segmentLen + (d+d/2)*cfg.separation
                 coordinates[d][row][col][0] = cfg.origin[1] + row*cfg.segmentLen
 
-                # Calculate servo angles (in radians) necessary to reach the coordinate point.
-                c = sqrt(coordinates[d][row][col][0]**2 + coordinates[d][row][col][1]**2)
                 try:
-                    # Calculate elbow angle, then calculate shoulder angle depending on elbow angle.
-                    angles[d][row][col][1] = cfg.elbowZero - acos(((cfg.upperArmLen**2 + cfg.lowerArmLen**2) - c**2)/(2 * cfg.upperArmLen * cfg.lowerArmLen))
-                    angles[d][row][col][0] = cfg.shoulderZero - asin(cfg.lowerArmLen/c * sin(angles[d][row][col][1])) + atan(coordinates[d][row][col][1]/coordinates[d][row][col][0])
+                    angles[d][row][col] = positionToAngles(coordinates[d][row][col])
                 except ValueError as e:
                     print("Error:", e)
 
-                print("Values for", d, row, col, ":", coordinates[d][row][col], c, angles[d][row][col])
+                print("Values for", d, row, col, ":", coordinates[d][row][col], angles[d][row][col])
 
 
 # Convert angles of [0.0, pi] to [0, 0x3fff] so we can send them over serial as
@@ -71,6 +81,16 @@ def zero():
     time.sleep(cfg.zeroDelay)   # Wait until pen is in cap.
 
     transmit(0)
+
+# Move arm to position with stepsize defined in config file. If wristPos ==
+# wristZero, stepsize == 0.
+def moveToPoint(position, wristPos):
+    global desiredAngles
+    desiredAngles[2] = wristPos
+
+    if wristPos == wristZero:
+        desiredAngles[:2] = angles[position]
+
 
 def drawDigit(position, digit):
     global desiredAngles
