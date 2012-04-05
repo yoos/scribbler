@@ -59,7 +59,7 @@ def angle2byte(angle):
 # =============================================================================
 def zero():
     global desiredAngles
-    desiredAngles[0] = cfg.shoulderZero
+    desiredAngles[0] = pi
     desiredAngles[2] = cfg.wristZero
 
     desiredAngles[1] = cfg.elbowZero - 0.1
