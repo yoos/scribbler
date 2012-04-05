@@ -123,17 +123,16 @@ def moveToPoint(newPos, wristPos):
 def drawDigit(position, digit):
     global desiredAngles
     desiredAngles[2] = cfg.wristZero   # Start with wrist in zero position.
-    desiredAngles[:2] = angles[position][cfg.numbers[digit][0][0]][cfg.numbers[digit][0][1]]
-    transmit(1)
-    desiredAngles[2] = cfg.wristPen
-    transmit(1)
+
+    moveToPoint(coordinates[position][0][0], cfg.wristZero)
 
     for point in cfg.numbers[digit]:
-        desiredAngles[:2] = angles[position][point[0]][point[1]]
-        transmit(1)
-        time.sleep(cfg.drawSpeed)
         if cfg.debug:
             print("Writing", digit, "at position", position, ". Servo angles:", desiredAngles, "  Sending bytes:", angle2byte(desiredAngles[0]), angle2byte(desiredAngles[1]), angle2byte(desiredAngles[2]))
+
+        moveToPoint(coordinates[position][point[0]][point[1]], cfg.wristPen)
+
+
 
 
 # =============================================================================
@@ -230,6 +229,8 @@ if __name__ == "__main__":
             elif coordInput == 'we':
                 desiredAngles[2] = cfg.wristEraser
                 transmit(1)
+            elif coordInput == 'k':
+                transmit(0)
             elif coordInput == '955':
                 drawDigit(0, 9)
                 drawDigit(1, 5)
