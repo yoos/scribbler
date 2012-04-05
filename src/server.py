@@ -25,6 +25,7 @@ angles      = [[[[0., 0.], [0., 0.]], [[0., 0.], [0., 0.]], [[0., 0.], [0., 0.]]
                [[[0., 0.], [0., 0.]], [[0., 0.], [0., 0.]], [[0., 0.], [0., 0.]]],
                [[[0., 0.], [0., 0.]], [[0., 0.], [0., 0.]], [[0., 0.], [0., 0.]]]]
 
+currentPos = [0, 0]
 desiredAngles = [0, 0, 0]   # Desired shoulder, elbow, and wrist angles, as bytes.
 
 
@@ -36,7 +37,7 @@ def positionToAngles(position):
 
     # Calculate elbow angle, then calculate shoulder angle depending on elbow angle.
     angles[1] = cfg.elbowZero - acos(((cfg.upperArmLen**2 + cfg.lowerArmLen**2) - c**2)/(2 * cfg.upperArmLen * cfg.lowerArmLen))
-    angles[0] = cfg.shoulderZero - asin(cfg.lowerArmLen/c * sin(angles[1])) + atan(position[1]/position[0])
+    angles[0] = cfg.shoulderZero - asin(cfg.lowerArmLen/c * sin(angles[1])) + atan(position[0]/position[1])
 
     return angles
 
@@ -46,8 +47,8 @@ def setupAngles():
         for row in range(3):
             for col in range(2):
                 # Calculate coordinates.
-                coordinates[d][row][col][1] = cfg.origin[0] + (d+col)*cfg.segmentLen + (d+d/2)*cfg.separation
-                coordinates[d][row][col][0] = cfg.origin[1] + row*cfg.segmentLen
+                coordinates[d][row][col][0] = cfg.origin[0] + (d+col)*cfg.segmentLen + (d+d/2)*cfg.separation
+                coordinates[d][row][col][1] = cfg.origin[1] + row*cfg.segmentLen
 
                 try:
                     angles[d][row][col] = positionToAngles(coordinates[d][row][col])
@@ -82,19 +83,42 @@ def zero():
 
     transmit(0)
 
-# Move arm to position with stepsize defined in config file. If wristPos ==
-# wristZero, stepsize == 0.
-def moveToPoint(position, wristPos):
-    global desiredAngles
+# Move arm to position with drawStepSize defined in config file. If wristPos ==
+# wristZero, ignore drawStepSize.
+def moveToPoint(newPos, wristPos):
+    global desiredAngles, currentPos
     desiredAngles[2] = wristPos
 
     if wristPos == cfg.wristZero:
-        desiredAngles[:2] = positionToAngles(position)
+        currentPos = newPos
+        desiredAngles[:2] = positionToAngles(currentPos)
         transmit(1)
     else:
-        desiredAngles[:2] = positionToAngles(position)
-        transmit(1)
+        step = [0., 0.]
 
+        for i in range(2):
+            step[i] = newPos[i] - currentPos[i]
+
+        print("Distance to move:", step)
+
+        numSteps = sqrt(step[0]**2 + step[1]**2) / cfg.drawStepSize
+
+        print("Number of steps:", numSteps)
+
+        step[0] /= numSteps
+        step[1] /= numSteps
+
+        print("Step size:", step)
+
+        for i in range(int(numSteps)):
+            currentPos = [currentPos[j] + step[j] for j in range(2)]
+
+            desiredAngles[:2] = positionToAngles(currentPos)
+            print(currentPos)
+            transmit(1)
+
+        currentPos = newPos
+        transmit(1)
 
 def drawDigit(position, digit):
     global desiredAngles
