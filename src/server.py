@@ -88,8 +88,9 @@ def moveToPoint(position, wristPos):
     global desiredAngles
     desiredAngles[2] = wristPos
 
-    if wristPos == wristZero:
-        desiredAngles[:2] = angles[position]
+    if wristPos == cfg.wristZero:
+        desiredAngles[:2] = positionToAngles(position)
+        transmit(1)
 
 
 def drawDigit(position, digit):
@@ -213,10 +214,7 @@ if __name__ == "__main__":
                 coordProcessed[i] = float(coordInput.split()[i])
             print coordProcessed
 
-            desiredAngles[:2] = coordProcessed
-            transmit(1)
-            desiredAngles[2] = cfg.wristPen
-            transmit(1)
+            moveToPoint(coordProcessed, cfg.wristZero)
 
     desiredAngles[2] = cfg.wristZero
     zero()
