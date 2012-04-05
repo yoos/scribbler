@@ -91,6 +91,9 @@ def moveToPoint(position, wristPos):
     if wristPos == cfg.wristZero:
         desiredAngles[:2] = positionToAngles(position)
         transmit(1)
+    else:
+        desiredAngles[:2] = positionToAngles(position)
+        transmit(1)
 
 
 def drawDigit(position, digit):
@@ -189,32 +192,42 @@ if __name__ == "__main__":
     while True:
         coordInput = raw_input("Coordinates:")
 
-        if coordInput == 'x':
-            break
-        elif coordInput == 'z':
-            zero()
-        elif coordInput == 'w':
-            desiredAngles[2] = cfg.wristZero
-            transmit(1)
-        elif coordInput == '955':
-            drawDigit(0, 9)
-            drawDigit(1, 5)
-            drawDigit(2, 5)
-        elif coordInput == 't':
-            for d in range(4):
-                for row in range(3):
-                    for col in range(2):
-                        desiredAngles[2] = cfg.wristPen
-                        desiredAngles[:2] = angles[d][row][col]
-                        transmit(1)
-                        print("Position:", d, "Servo angles:", desiredAngles, "  Sending bytes:", angle2byte(desiredAngles[0]), angle2byte(desiredAngles[1]), angle2byte(desiredAngles[2]))
-        else:
-            coordProcessed = [0., 0.]
-            for i in range(len(coordInput.split())):
-                coordProcessed[i] = float(coordInput.split()[i])
-            print coordProcessed
+        try:
+            if coordInput == 'x':
+                break
+            elif coordInput == 'z':
+                zero()
+            elif coordInput == 'wz':
+                desiredAngles[2] = cfg.wristZero
+                transmit(1)
+            elif coordInput == 'wp':
+                desiredAngles[2] = cfg.wristPen
+                transmit(1)
+            elif coordInput == 'we':
+                desiredAngles[2] = cfg.wristEraser
+                transmit(1)
+            elif coordInput == '955':
+                drawDigit(0, 9)
+                drawDigit(1, 5)
+                drawDigit(2, 5)
+            elif coordInput == 't':
+                for d in range(4):
+                    for row in range(3):
+                        for col in range(2):
+                            desiredAngles[2] = cfg.wristPen
+                            desiredAngles[:2] = angles[d][row][col]
+                            transmit(1)
+                            print("Position:", d, "Servo angles:", desiredAngles, "  Sending bytes:", angle2byte(desiredAngles[0]), angle2byte(desiredAngles[1]), angle2byte(desiredAngles[2]))
+            else:
+                coordProcessed = [0., 0.]
+                for i in range(len(coordInput.split())):
+                    coordProcessed[i] = float(coordInput.split()[i])
+                print coordProcessed
 
-            moveToPoint(coordProcessed, cfg.wristZero)
+                moveToPoint(coordProcessed, desiredAngles[2])
+
+        except:
+            pass
 
     desiredAngles[2] = cfg.wristZero
     zero()
